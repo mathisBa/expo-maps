@@ -4,7 +4,7 @@ import * as Location from "expo-location";
 import Papa from "papaparse";
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import MapView, { Region } from "react-native-maps";
+import MapView, { Marker, Region } from "react-native-maps";
 
 type Radar = {
   id: string;
@@ -55,13 +55,20 @@ export default function App() {
       dynamicTyping: true,
       skipEmptyLines: true,
       worker: false,
+      transformHeader: (h) =>
+        h
+          .trim()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, "_")
+          .replace(/[^A-Za-z0-9_]/g, ""),
       complete: ({ data }) => {
         const items = (data as any[])
           .map((r: any, i: number) => ({
-            id: String(r.id || r.ID || i),
-            lat: Number(r.latitude || r.lat || r.Latitude),
-            lon: Number(r.longitude || r.lon || r.Longitude),
-            type: String(r.type || r.TYPE || r.Type || ""),
+            id: String(r.id || r.ID || r.Numro_de_radar || i),
+            lat: Number(r.latitude || r.Latitude || r.lat),
+            lon: Number(r.longitude || r.Longitude || r.lon),
+            type: String(r.Type_de_radar || r.type || r.TYPE || ""),
             vma: Number(r.vma || r.VMA || r.vitesse_max || r.Vitesse),
           }))
           .filter((x) => Number.isFinite(x.lat) && Number.isFinite(x.lon));
@@ -83,7 +90,17 @@ export default function App() {
           latitudeDelta: 0.1,
           longitudeDelta: 0.1,
         }}
-      />
+      >
+        {radars.map((r) => (
+          <Marker
+            key={r.id}
+            coordinate={{ latitude: r.lat, longitude: r.lon }}
+            title={r.type || "Radar"}
+            description={r.vma ? `VMA ${r.vma} km/h` : undefined}
+            pinColor="orange"
+          />
+        ))}
+      </MapView>
 
       <View style={styles.quickActionContainer}>
         <View style={{ flexDirection: "row", gap: 10 }}>
