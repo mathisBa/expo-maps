@@ -1,13 +1,53 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import MapView from "react-native-maps";
+import * as Location from "expo-location";
+import React, { useEffect, useRef, useState } from "react";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import MapView, { Region } from "react-native-maps";
 
 export default function App() {
+  const mapRef = useRef<MapView | null>(null);
+  const [hasLocation, setHasLocation] = useState(false);
+
+  const recenterOnUser = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Localisation refusée");
+      setHasLocation(false);
+      return;
+    }
+    setHasLocation(true);
+
+    const loc = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+    const region: Region = {
+      latitude: loc.coords.latitude,
+      longitude: loc.coords.longitude,
+      latitudeDelta: 0.03,
+      longitudeDelta: 0.03,
+    };
+    mapRef.current?.animateToRegion(region, 500);
+  };
+
+  useEffect(() => {
+    recenterOnUser();
+  }, []);
+
   return (
     <View style={styles.container}>
-      <MapView style={styles.map} />
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        showsUserLocation={hasLocation}
+        initialRegion={{
+          latitude: 48.8566,
+          longitude: 2.3522,
+          latitudeDelta: 0.1,
+          longitudeDelta: 0.1,
+        }}
+      />
+
       <View style={styles.quickActionContainer}>
         <View style={{ flexDirection: "row", gap: 10 }}>
           <BlurView style={styles.quickActionBlur} intensity={60} tint="dark">
@@ -33,8 +73,12 @@ export default function App() {
             </TouchableOpacity>
           </BlurView>
         </View>
+
         <BlurView style={styles.quickActionBlur} intensity={60} tint="dark">
-          <TouchableOpacity style={styles.quickActionButton} onPress={() => {}}>
+          <TouchableOpacity
+            style={styles.quickActionButton}
+            onPress={recenterOnUser}
+          >
             <MaterialIcons name="my-location" size={24} color="orange" />
           </TouchableOpacity>
         </BlurView>
