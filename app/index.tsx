@@ -1,13 +1,27 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Location from "expo-location";
+import Papa from "papaparse";
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapView, { Region } from "react-native-maps";
 
+type Radar = {
+  id: string;
+  lat: number;
+  lon: number;
+  type?: string;
+  vma?: number;
+  speedbests?: { user: string; speed: number; date: string }[];
+};
+
+const CSV_URL =
+  "https://www.data.gouv.fr/api/1/datasets/r/402aa4fe-86a9-4dcd-af88-23753e290a58"; // ressource CSV
+
 export default function App() {
   const mapRef = useRef<MapView | null>(null);
   const [hasLocation, setHasLocation] = useState(false);
+  const [radars, setRadars] = useState<Radar[]>([]);
 
   const recenterOnUser = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -32,6 +46,29 @@ export default function App() {
 
   useEffect(() => {
     recenterOnUser();
+  }, []);
+
+  useEffect(() => {
+    Papa.parse(CSV_URL, {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      skipEmptyLines: true,
+      worker: false,
+      complete: ({ data }) => {
+        const items = (data as any[])
+          .map((r: any, i: number) => ({
+            id: String(r.id || r.ID || i),
+            lat: Number(r.latitude || r.lat || r.Latitude),
+            lon: Number(r.longitude || r.lon || r.Longitude),
+            type: String(r.type || r.TYPE || r.Type || ""),
+            vma: Number(r.vma || r.VMA || r.vitesse_max || r.Vitesse),
+          }))
+          .filter((x) => Number.isFinite(x.lat) && Number.isFinite(x.lon));
+        setRadars(items);
+      },
+      error: (err) => Alert.alert("Erreur chargement radars", String(err)),
+    });
   }, []);
 
   return (
