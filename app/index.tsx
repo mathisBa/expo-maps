@@ -8,19 +8,37 @@ export default function App() {
   return (
     <View style={styles.container}>
       <MapView style={styles.map} />
-      <BlurView intensity={80} tint="dark" style={styles.quickActionContainer}>
-        <TouchableOpacity style={styles.quickActionButton} onPress={() => {}}>
-          <MaterialIcons name="filter-list" size={24} color="orange" />
-          <Text style={styles.quickActionText}>Filters</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.quickActionButton} onPress={() => {}}>
-          <MaterialIcons name="format-list-bulleted" size={24} color="orange" />
-          <Text style={styles.quickActionText}>Liste</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.quickActionButton} onPress={() => {}}>
-          <MaterialIcons name="my-location" size={24} color="orange" />
-        </TouchableOpacity>
-      </BlurView>
+      <View style={styles.quickActionContainer}>
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <BlurView style={styles.quickActionBlur} intensity={60} tint="dark">
+            <TouchableOpacity
+              style={styles.quickActionButton}
+              onPress={() => {}}
+            >
+              <MaterialIcons name="filter-list" size={24} color="orange" />
+              <Text style={styles.quickActionText}>Filters</Text>
+            </TouchableOpacity>
+          </BlurView>
+          <BlurView style={styles.quickActionBlur} intensity={60} tint="dark">
+            <TouchableOpacity
+              style={styles.quickActionButton}
+              onPress={() => {}}
+            >
+              <MaterialIcons
+                name="format-list-bulleted"
+                size={24}
+                color="orange"
+              />
+              <Text style={styles.quickActionText}>Liste</Text>
+            </TouchableOpacity>
+          </BlurView>
+        </View>
+        <BlurView style={styles.quickActionBlur} intensity={60} tint="dark">
+          <TouchableOpacity style={styles.quickActionButton} onPress={() => {}}>
+            <MaterialIcons name="my-location" size={24} color="orange" />
+          </TouchableOpacity>
+        </BlurView>
+      </View>
     </View>
   );
 }
@@ -42,7 +60,7 @@ const styles = StyleSheet.create({
     bottom: 50,
     padding: 10,
     left: "5%",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     overflow: "hidden",
   },
   quickActionButton: {
@@ -55,4 +73,8 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   quickActionText: { color: "orange" },
+  quickActionBlur: {
+    borderRadius: 100,
+    overflow: "hidden",
+  },
 });
