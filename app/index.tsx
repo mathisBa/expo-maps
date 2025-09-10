@@ -1,3 +1,5 @@
+import { MaterialIcons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapView from "react-native-maps";
@@ -6,17 +8,19 @@ export default function App() {
   return (
     <View style={styles.container}>
       <MapView style={styles.map} />
-      <View style={styles.quickActionContainer}>
+      <BlurView intensity={80} tint="dark" style={styles.quickActionContainer}>
         <TouchableOpacity style={styles.quickActionButton} onPress={() => {}}>
-          <Text>Filter</Text>
+          <MaterialIcons name="filter-list" size={24} color="orange" />
+          <Text style={styles.quickActionText}>Filters</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.quickActionButton} onPress={() => {}}>
-          <Text>List</Text>
+          <MaterialIcons name="format-list-bulleted" size={24} color="orange" />
+          <Text style={styles.quickActionText}>Liste</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.quickActionButton} onPress={() => {}}>
-          <Text>Locate</Text>
+          <MaterialIcons name="my-location" size={24} color="orange" />
         </TouchableOpacity>
-      </View>
+      </BlurView>
     </View>
   );
 }
@@ -30,17 +34,25 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   quickActionContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 10,
+    width: "90%",
     position: "absolute",
     bottom: 50,
-    right: 20,
     padding: 10,
-    elevation: 5,
+    left: "5%",
+    justifyContent: "space-around",
+    overflow: "hidden",
   },
   quickActionButton: {
-    backgroundColor: "orange",
     padding: 10,
-    borderRadius: 5,
-    marginBottom: 10,
+    borderRadius: 100,
     alignItems: "center",
+    justifyContent: "center",
+    display: "flex",
+    flexDirection: "row",
+    gap: 5,
   },
+  quickActionText: { color: "orange" },
 });
