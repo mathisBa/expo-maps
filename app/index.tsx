@@ -204,8 +204,23 @@ export default function App() {
               coordinate={{ latitude: r.lat, longitude: r.lon }}
               title={r.type || "Radar"}
               description={r.vma ? `VMA ${r.vma} km/h` : undefined}
-              pinColor="orange"
-            />
+            >
+              <View
+                style={{
+                  backgroundColor: "#1a1a1a",
+                  borderRadius: 25,
+                  padding: 6,
+                  borderWidth: 1,
+                  borderColor: "#ffa500",
+                }}
+              >
+                <MaterialIcons
+                  name={getIcon(r.type) as any}
+                  size={22}
+                  color="#ffa500"
+                />
+              </View>
+            </Marker>
           ))}
         </MapView>
       )}
