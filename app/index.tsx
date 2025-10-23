@@ -151,7 +151,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       {showList && userLoc ? (
-        <SafeAreaView>
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#0d0d0d" }}>
           <FlatList
             data={[...visibleRadars].sort(
               (a, b) =>
