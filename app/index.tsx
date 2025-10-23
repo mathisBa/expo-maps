@@ -36,13 +36,25 @@ export default function App() {
   });
 
   const getIcon = (type?: string) => {
-    const t = (type || "").toLowerCase();
-    if (t.includes("feu") || t.includes("trafic")) return "traffic";
-    if (t.includes("fixe")) return "camera";
-    if (t.includes("chantier") || t.includes("travaux")) return "construction";
-    if (t.includes("mobile")) return "radar";
-    if (t.includes("vitesse")) return "speed";
-    return "camera-alt";
+    const t = (type || "").toUpperCase();
+    switch (t) {
+      case "ETF": // radar fixe
+        return "camera";
+      case "ETD": // discriminant (différencie véhicules)
+        return "directions-car";
+      case "ETVM": // vitesse moyenne
+        return "speed";
+      case "ETT": // tronçon
+        return "straighten";
+      case "ETU": // urbain
+        return "location-city";
+      case "ETFR": // feu rouge
+        return "traffic";
+      case "ETPN": // passage à niveau
+        return "train";
+      default:
+        return "camera-alt";
+    }
   };
 
   const recenterOnUser = async () => {
