@@ -2,9 +2,10 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Location from "expo-location";
 import Papa from "papaparse";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import MapView, { Marker, Region } from "react-native-maps";
+import { Marker, Region } from "react-native-maps";
+import MapView from "react-native-map-clustering";
 import { FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -19,11 +20,39 @@ type Radar = {
 
 const CSV_URL =
   "https://www.data.gouv.fr/api/1/datasets/r/402aa4fe-86a9-4dcd-af88-23753e290a58";
+let radars: Radar[];
+Papa.parse(CSV_URL, {
+  download: true,
+  header: true,
+  dynamicTyping: true,
+  skipEmptyLines: true,
+  worker: false,
+  transformHeader: (h) =>
+    h
+      .trim()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "_")
+      .replace(/[^A-Za-z0-9_]/g, ""),
+  complete: ({ data }) => {
+    radars = (data as any[])
+      .map((r: any, i: number) => ({
+        id: String(r.id || r.ID || r.Numro_de_radar || i),
+        lat: Number(r.latitude || r.Latitude || r.lat),
+        lon: Number(r.longitude || r.Longitude || r.lon),
+        type: String(r.Type_de_radar || r.type || r.TYPE || ""),
+        vma: Number(r.vma || r.VMA || r.vitesse_max || r.Vitesse),
+      }))
+      .filter((x) => Number.isFinite(x.lat) && Number.isFinite(x.lon));
+  },
+  error: (err) => Alert.alert("Erreur chargement radars", String(err)),
+});
+
+const radarTypes = ["ETF", "ETD", "ETVM", "ETT", "ETU", "ETFR", "ETPN"];
 
 export default function App() {
   const mapRef = useRef<MapView | null>(null);
   const [hasLocation, setHasLocation] = useState(false);
-  const [radars, setRadars] = useState<Radar[]>([]);
   const [showList, setShowList] = useState(false);
   const [userLoc, setUserLoc] = useState<{ lat: number; lon: number } | null>(
     null
@@ -34,12 +63,10 @@ export default function App() {
     latitudeDelta: 0.1,
     longitudeDelta: 0.1,
   });
-  const radarTypes = ["ETF", "ETD", "ETVM", "ETT", "ETU", "ETFR", "ETPN"];
-  const [visibleRadars, setVisibleRadars] = useState<Radar[]>([]);
   const [filters, setFilters] = useState<string[]>(radarTypes);
   const [showFilters, setShowFilters] = useState(false);
 
-  const updateVisibleRadars = (region: Region) => {
+  const visibleRadars = useMemo(() => {
     const types = Array.from(
       new Set(radars.map((r) => r.type).filter(Boolean))
     );
@@ -62,8 +89,8 @@ export default function App() {
         filters.includes((r.type || "").toUpperCase())
     );
 
-    setVisibleRadars(filtered);
-  };
+    return filtered;
+  }, [region, filters]);
 
   const getIcon = (type?: string) => {
     const t = (type || "").toUpperCase();
@@ -128,40 +155,6 @@ export default function App() {
 
   useEffect(() => {
     recenterOnUser();
-  }, []);
-
-  useEffect(() => {
-    updateVisibleRadars(region);
-  }, [filters]);
-
-  useEffect(() => {
-    Papa.parse(CSV_URL, {
-      download: true,
-      header: true,
-      dynamicTyping: true,
-      skipEmptyLines: true,
-      worker: false,
-      transformHeader: (h) =>
-        h
-          .trim()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, "_")
-          .replace(/[^A-Za-z0-9_]/g, ""),
-      complete: ({ data }) => {
-        const items = (data as any[])
-          .map((r: any, i: number) => ({
-            id: String(r.id || r.ID || r.Numro_de_radar || i),
-            lat: Number(r.latitude || r.Latitude || r.lat),
-            lon: Number(r.longitude || r.Longitude || r.lon),
-            type: String(r.Type_de_radar || r.type || r.TYPE || ""),
-            vma: Number(r.vma || r.VMA || r.vitesse_max || r.Vitesse),
-          }))
-          .filter((x) => Number.isFinite(x.lat) && Number.isFinite(x.lon));
-        setRadars(items);
-      },
-      error: (err) => Alert.alert("Erreur chargement radars", String(err)),
-    });
   }, []);
 
   return (
@@ -231,7 +224,6 @@ export default function App() {
           region={region}
           onRegionChangeComplete={(r) => {
             setRegion(r);
-            updateVisibleRadars(r);
           }}
         >
           {visibleRadars.map((r) => (
