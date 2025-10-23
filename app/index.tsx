@@ -131,6 +131,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    updateVisibleRadars(region);
+  }, [filters]);
+
+  useEffect(() => {
     Papa.parse(CSV_URL, {
       download: true,
       header: true,
@@ -318,11 +322,12 @@ export default function App() {
               <TouchableOpacity
                 key={t}
                 onPress={() =>
-                  setFilters((prev) =>
-                    prev.includes(t)
+                  setFilters((prev) => {
+                    const next = prev.includes(t)
                       ? prev.filter((f) => f !== t)
-                      : [...prev, t]
-                  )
+                      : [...prev, t];
+                    return next;
+                  })
                 }
                 style={{
                   backgroundColor: filters.includes(t) ? "#ffa500" : "#333",
