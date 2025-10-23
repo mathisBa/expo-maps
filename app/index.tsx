@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapView, { Marker, Region } from "react-native-maps";
 import { FlatList } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type Radar = {
   id: string;
@@ -33,6 +34,16 @@ export default function App() {
     latitudeDelta: 0.1,
     longitudeDelta: 0.1,
   });
+
+  const getIcon = (type?: string) => {
+    const t = (type || "").toLowerCase();
+    if (t.includes("feu") || t.includes("trafic")) return "traffic";
+    if (t.includes("fixe")) return "camera";
+    if (t.includes("chantier") || t.includes("travaux")) return "construction";
+    if (t.includes("mobile")) return "radar";
+    if (t.includes("vitesse")) return "speed";
+    return "camera-alt";
+  };
 
   const recenterOnUser = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -110,31 +121,63 @@ export default function App() {
   return (
     <View style={styles.container}>
       {showList && userLoc ? (
-        <FlatList
-          data={[...radars].sort(
-            (a, b) =>
-              distanceKm(userLoc.lat, userLoc.lon, a.lat, a.lon) -
-              distanceKm(userLoc.lat, userLoc.lon, b.lat, b.lon)
-          )}
-          keyExtractor={(r) => r.id}
-          renderItem={({ item }) => (
-            <View
-              style={{ padding: 10, borderBottomWidth: 1, borderColor: "#ccc" }}
-            >
-              <Text style={{ color: "white" }}>{item.type || "Radar"}</Text>
-              <Text style={{ color: "orange" }}>
-                {item.vma ? `${item.vma} km/h` : ""} •{" "}
-                {distanceKm(
-                  userLoc.lat,
-                  userLoc.lon,
-                  item.lat,
-                  item.lon
-                ).toFixed(1)}{" "}
-                km
-              </Text>
-            </View>
-          )}
-        />
+        <SafeAreaView>
+          <FlatList
+            data={[...radars].sort(
+              (a, b) =>
+                distanceKm(userLoc.lat, userLoc.lon, a.lat, a.lon) -
+                distanceKm(userLoc.lat, userLoc.lon, b.lat, b.lon)
+            )}
+            keyExtractor={(r) => r.id}
+            renderItem={({ item }) => {
+              // sécurité si userLoc est encore null
+              const dist = userLoc
+                ? distanceKm(
+                    userLoc.lat,
+                    userLoc.lon,
+                    item.lat,
+                    item.lon
+                  ).toFixed(1)
+                : "?";
+
+              return (
+                <View
+                  style={{
+                    backgroundColor: "#1a1a1a",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 16,
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#333",
+                  }}
+                >
+                  <MaterialIcons
+                    name={getIcon(item.type) as any}
+                    size={28}
+                    color="#ffa500"
+                    style={{ marginRight: 12 }}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        color: "white",
+                        fontSize: 16,
+                        fontWeight: "600",
+                      }}
+                    >
+                      {item.type || "Radar"}
+                    </Text>
+                    <Text style={{ color: "#bbb", fontSize: 13 }}>
+                      {item.vma ? `${item.vma} km/h` : "Vitesse inconnue"} •{" "}
+                      {dist} km
+                    </Text>
+                  </View>
+                </View>
+              );
+            }}
+          />
+        </SafeAreaView>
       ) : (
         <MapView
           ref={mapRef}
