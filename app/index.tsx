@@ -106,7 +106,7 @@ export default function App() {
       longitudeDelta: 0.03,
     };
     setUserLoc({ lat: loc.coords.latitude, lon: loc.coords.longitude });
-    mapRef.current?.animateToRegion(region, 500);
+    mapRef.current?.animateToRegion(region, 2000);
   };
 
   const distanceKm = (
