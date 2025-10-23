@@ -5,6 +5,7 @@ import Papa from "papaparse";
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapView, { Marker, Region } from "react-native-maps";
+import { FlatList } from "react-native";
 
 type Radar = {
   id: string;
@@ -16,12 +17,16 @@ type Radar = {
 };
 
 const CSV_URL =
-  "https://www.data.gouv.fr/api/1/datasets/r/402aa4fe-86a9-4dcd-af88-23753e290a58"; // ressource CSV
+  "https://www.data.gouv.fr/api/1/datasets/r/402aa4fe-86a9-4dcd-af88-23753e290a58";
 
 export default function App() {
   const mapRef = useRef<MapView | null>(null);
   const [hasLocation, setHasLocation] = useState(false);
   const [radars, setRadars] = useState<Radar[]>([]);
+  const [showList, setShowList] = useState(false);
+  const [userLoc, setUserLoc] = useState<{ lat: number; lon: number } | null>(
+    null
+  );
 
   const recenterOnUser = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -41,7 +46,25 @@ export default function App() {
       latitudeDelta: 0.03,
       longitudeDelta: 0.03,
     };
+    setUserLoc({ lat: loc.coords.latitude, lon: loc.coords.longitude });
     mapRef.current?.animateToRegion(region, 500);
+  };
+
+  const distanceKm = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ) => {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
   useEffect(() => {
@@ -80,27 +103,55 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        showsUserLocation={hasLocation}
-        initialRegion={{
-          latitude: 48.8566,
-          longitude: 2.3522,
-          latitudeDelta: 0.1,
-          longitudeDelta: 0.1,
-        }}
-      >
-        {radars.map((r) => (
-          <Marker
-            key={r.id}
-            coordinate={{ latitude: r.lat, longitude: r.lon }}
-            title={r.type || "Radar"}
-            description={r.vma ? `VMA ${r.vma} km/h` : undefined}
-            pinColor="orange"
-          />
-        ))}
-      </MapView>
+      {showList && userLoc ? (
+        <FlatList
+          data={[...radars].sort(
+            (a, b) =>
+              distanceKm(userLoc.lat, userLoc.lon, a.lat, a.lon) -
+              distanceKm(userLoc.lat, userLoc.lon, b.lat, b.lon)
+          )}
+          keyExtractor={(r) => r.id}
+          renderItem={({ item }) => (
+            <View
+              style={{ padding: 10, borderBottomWidth: 1, borderColor: "#ccc" }}
+            >
+              <Text style={{ color: "white" }}>{item.type || "Radar"}</Text>
+              <Text style={{ color: "orange" }}>
+                {item.vma ? `${item.vma} km/h` : ""} •{" "}
+                {distanceKm(
+                  userLoc.lat,
+                  userLoc.lon,
+                  item.lat,
+                  item.lon
+                ).toFixed(1)}{" "}
+                km
+              </Text>
+            </View>
+          )}
+        />
+      ) : (
+        <MapView
+          ref={mapRef}
+          style={styles.map}
+          showsUserLocation={hasLocation}
+          initialRegion={{
+            latitude: 48.8566,
+            longitude: 2.3522,
+            latitudeDelta: 0.1,
+            longitudeDelta: 0.1,
+          }}
+        >
+          {radars.map((r) => (
+            <Marker
+              key={r.id}
+              coordinate={{ latitude: r.lat, longitude: r.lon }}
+              title={r.type || "Radar"}
+              description={r.vma ? `VMA ${r.vma} km/h` : undefined}
+              pinColor="orange"
+            />
+          ))}
+        </MapView>
+      )}
 
       <View style={styles.quickActionContainer}>
         <View style={{ flexDirection: "row", gap: 10 }}>
@@ -116,14 +167,16 @@ export default function App() {
           <BlurView style={styles.quickActionBlur} intensity={60} tint="dark">
             <TouchableOpacity
               style={styles.quickActionButton}
-              onPress={() => {}}
+              onPress={() => setShowList((v) => !v)}
             >
               <MaterialIcons
                 name="format-list-bulleted"
                 size={24}
                 color="orange"
               />
-              <Text style={styles.quickActionText}>Liste</Text>
+              <Text style={styles.quickActionText}>
+                {showList ? "Carte" : "Liste"}
+              </Text>
             </TouchableOpacity>
           </BlurView>
         </View>
