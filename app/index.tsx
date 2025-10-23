@@ -27,6 +27,12 @@ export default function App() {
   const [userLoc, setUserLoc] = useState<{ lat: number; lon: number } | null>(
     null
   );
+  const [region, setRegion] = useState<Region>({
+    latitude: 48.8566,
+    longitude: 2.3522,
+    latitudeDelta: 0.1,
+    longitudeDelta: 0.1,
+  });
 
   const recenterOnUser = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -134,12 +140,8 @@ export default function App() {
           ref={mapRef}
           style={styles.map}
           showsUserLocation={hasLocation}
-          initialRegion={{
-            latitude: 48.8566,
-            longitude: 2.3522,
-            latitudeDelta: 0.1,
-            longitudeDelta: 0.1,
-          }}
+          region={region}
+          onRegionChangeComplete={(r) => setRegion(r)}
         >
           {radars.map((r) => (
             <Marker
