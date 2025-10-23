@@ -34,9 +34,16 @@ export default function App() {
     latitudeDelta: 0.1,
     longitudeDelta: 0.1,
   });
+  const radarTypes = ["ETF", "ETD", "ETVM", "ETT", "ETU", "ETFR", "ETPN"];
   const [visibleRadars, setVisibleRadars] = useState<Radar[]>([]);
+  const [filters, setFilters] = useState<string[]>(radarTypes);
+  const [showFilters, setShowFilters] = useState(false);
 
   const updateVisibleRadars = (region: Region) => {
+    const types = Array.from(
+      new Set(radars.map((r) => r.type).filter(Boolean))
+    );
+
     const margin = 1.5;
     const latDelta = region.latitudeDelta * margin;
     const lonDelta = region.longitudeDelta * margin;
@@ -48,8 +55,13 @@ export default function App() {
 
     const filtered = radars.filter(
       (r) =>
-        r.lat >= latMin && r.lat <= latMax && r.lon >= lonMin && r.lon <= lonMax
+        r.lat >= latMin &&
+        r.lat <= latMax &&
+        r.lon >= lonMin &&
+        r.lon <= lonMax &&
+        filters.includes((r.type || "").toUpperCase())
     );
+
     setVisibleRadars(filtered);
   };
 
@@ -250,7 +262,7 @@ export default function App() {
           <BlurView style={styles.quickActionBlur} intensity={60} tint="dark">
             <TouchableOpacity
               style={styles.quickActionButton}
-              onPress={() => {}}
+              onPress={() => setShowFilters(true)}
             >
               <MaterialIcons name="filter-list" size={24} color="orange" />
               <Text style={styles.quickActionText}>Filters</Text>
@@ -282,6 +294,63 @@ export default function App() {
           </TouchableOpacity>
         </BlurView>
       </View>
+      {showFilters && (
+        <View
+          style={{
+            position: "absolute",
+            bottom: 120,
+            left: 0,
+            right: 0,
+            backgroundColor: "#111",
+            borderTopWidth: 1,
+            borderColor: "#333",
+            padding: 16,
+          }}
+        >
+          <Text
+            style={{ color: "orange", fontWeight: "600", marginBottom: 10 }}
+          >
+            Filtrer par type
+          </Text>
+
+          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+            {radarTypes.map((t) => (
+              <TouchableOpacity
+                key={t}
+                onPress={() =>
+                  setFilters((prev) =>
+                    prev.includes(t)
+                      ? prev.filter((f) => f !== t)
+                      : [...prev, t]
+                  )
+                }
+                style={{
+                  backgroundColor: filters.includes(t) ? "#ffa500" : "#333",
+                  paddingVertical: 6,
+                  paddingHorizontal: 12,
+                  borderRadius: 20,
+                  margin: 4,
+                }}
+              >
+                <Text style={{ color: "white" }}>{t}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TouchableOpacity
+            style={{
+              marginTop: 12,
+              backgroundColor: "#ffa500",
+              padding: 10,
+              borderRadius: 8,
+              alignItems: "center",
+            }}
+            onPress={() => setShowFilters(false)}
+          >
+            <Text style={{ color: "#111", fontWeight: "600" }}>Fermer</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
