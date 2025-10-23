@@ -34,6 +34,20 @@ export default function App() {
     latitudeDelta: 0.1,
     longitudeDelta: 0.1,
   });
+  const [visibleRadars, setVisibleRadars] = useState<Radar[]>([]);
+
+  const updateVisibleRadars = (region: Region) => {
+    const latMin = region.latitude - region.latitudeDelta / 2;
+    const latMax = region.latitude + region.latitudeDelta / 2;
+    const lonMin = region.longitude - region.longitudeDelta / 2;
+    const lonMax = region.longitude + region.longitudeDelta / 2;
+
+    const filtered = radars.filter(
+      (r) =>
+        r.lat >= latMin && r.lat <= latMax && r.lon >= lonMin && r.lon <= lonMax
+    );
+    setVisibleRadars(filtered);
+  };
 
   const getIcon = (type?: string) => {
     const t = (type || "").toUpperCase();
@@ -135,14 +149,13 @@ export default function App() {
       {showList && userLoc ? (
         <SafeAreaView>
           <FlatList
-            data={[...radars].sort(
+            data={[...visibleRadars].sort(
               (a, b) =>
                 distanceKm(userLoc.lat, userLoc.lon, a.lat, a.lon) -
                 distanceKm(userLoc.lat, userLoc.lon, b.lat, b.lon)
             )}
             keyExtractor={(r) => r.id}
             renderItem={({ item }) => {
-              // sécurité si userLoc est encore null
               const dist = userLoc
                 ? distanceKm(
                     userLoc.lat,
@@ -196,9 +209,12 @@ export default function App() {
           style={styles.map}
           showsUserLocation={hasLocation}
           region={region}
-          onRegionChangeComplete={(r) => setRegion(r)}
+          onRegionChangeComplete={(r) => {
+            setRegion(r);
+            updateVisibleRadars(r);
+          }}
         >
-          {radars.map((r) => (
+          {visibleRadars.map((r) => (
             <Marker
               key={r.id}
               coordinate={{ latitude: r.lat, longitude: r.lon }}
