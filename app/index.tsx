@@ -37,10 +37,14 @@ export default function App() {
   const [visibleRadars, setVisibleRadars] = useState<Radar[]>([]);
 
   const updateVisibleRadars = (region: Region) => {
-    const latMin = region.latitude - region.latitudeDelta / 2;
-    const latMax = region.latitude + region.latitudeDelta / 2;
-    const lonMin = region.longitude - region.longitudeDelta / 2;
-    const lonMax = region.longitude + region.longitudeDelta / 2;
+    const margin = 1.5;
+    const latDelta = region.latitudeDelta * margin;
+    const lonDelta = region.longitudeDelta * margin;
+
+    const latMin = region.latitude - latDelta / 2;
+    const latMax = region.latitude + latDelta / 2;
+    const lonMin = region.longitude - lonDelta / 2;
+    const lonMax = region.longitude + lonDelta / 2;
 
     const filtered = radars.filter(
       (r) =>
